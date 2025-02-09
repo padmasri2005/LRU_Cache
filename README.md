@@ -59,3 +59,101 @@ An LRU cache can be efficiently implemented using a combination of a doubly link
 | - prev, next   |
 +----------------+
 ```
+
+## 7. Code Implementation with Explanation
+The following Java implementation of an LRU cache uses a circular doubly linked list (CDLL) for efficient insertion, deletion, and reordering:
+
+```java
+class LRUCache {
+    CDLL ll;
+    int capacity;
+    int size;
+    Map<Integer, CDLLNode> mp;
+    
+    public LRUCache(int cap){
+        ll = new CDLL();
+        this.capacity = cap;
+        this.size = 0;
+        mp = new HashMap<>();
+    }
+    
+    int get(int k){
+        if(mp.containsKey(k)){
+            CDLLNode node = mp.get(k);
+            ll.moveToFront(node); // Move accessed node to front
+            return node.val;
+        }
+        return -1; // Key not found
+    }
+    
+    void put(int k, int v){
+        if(mp.containsKey(k)){ // Update existing key
+            CDLLNode node = mp.get(k);
+            node.val = v;
+            ll.moveToFront(node);
+        } else { // Insert new key
+            if(size < capacity){
+                CDLLNode nn = ll.insAtBegin(k, v);
+                mp.put(k, nn);
+                size++;
+            } else { // Evict LRU
+                int delKey = ll.delLast();
+                mp.remove(delKey);
+                CDLLNode nn = ll.insAtBegin(k, v);
+                mp.put(k, nn);
+            }
+        }
+    }
+}
+
+class CDLLNode {
+    int key, val;
+    CDLLNode prev, next;
+    
+    public CDLLNode(int k, int v){
+        this.key = k;
+        this.val = v;
+        this.prev = this.next = null;
+    }
+}
+
+class CDLL {
+    CDLLNode head;
+    
+    public CDLL(){
+        head = null;
+    }
+    
+    CDLLNode insAtBegin(int k, int v){
+        CDLLNode nn = new CDLLNode(k, v);
+        nn.next = nn; nn.prev = nn;
+        if(head == null) {head = nn; return nn;}
+        CDLLNode last = head.prev;
+        nn.next = head; head.prev = nn;
+        last.next = nn; nn.prev = last;
+        head = nn; return nn;
+    }
+    
+    int delLast(){
+        if(head == null) return -1;
+        CDLLNode last = head.prev;
+        int ret = last.key;
+        if(last == head) { head = null; return ret;}
+        last.prev.next = head;
+        head.prev = last.prev;
+        return ret;
+    }
+    
+    void moveToFront(CDLLNode nodeToMove){
+        if(nodeToMove == head) return; // Already at front
+        nodeToMove.prev.next = nodeToMove.next;
+        nodeToMove.next.prev = nodeToMove.prev;
+        CDLLNode last = head.prev;
+        nodeToMove.next = head; head.prev = nodeToMove;
+        last.next = nodeToMove; nodeToMove.prev = last;
+        head = nodeToMove;
+    }
+}
+```
+
+This implementation ensures **O(1) time complexity** for both **get** and **put** operations using a **HashMap** and a **Doubly Linked List**. The circular doubly linked list facilitates efficient insertion and deletion, making it an optimal choice for an **LRU Cache**.
